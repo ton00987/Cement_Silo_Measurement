@@ -1,6 +1,6 @@
 /*
   Demo   : Silo measurement
-  VERSION: 0.1 (2/8/2019)
+  VERSION: 0.2.5 (1/10/2562)
 
   MCU    : ESP32(ESP-WROOM-32)
 
@@ -280,35 +280,35 @@ void ledstatus()
     LED_BLUE_B.off();
   }
   if (state == 0) {
-    digitalWrite(LED_RED, HIGH);
-    digitalWrite(LED_GREEN, HIGH);
-    digitalWrite(LED_BLUE, HIGH);
+    digitalWrite(LED_RED, LOW);
+    digitalWrite(LED_GREEN, LOW);
+    digitalWrite(LED_BLUE, LOW);
     LED_RED_B.on();
     LED_GREEN_B.on();
     LED_BLUE_B.on();
   }
   if (state == 1) {
-    digitalWrite(LED_RED, LOW);
-    digitalWrite(LED_GREEN, HIGH);
-    digitalWrite(LED_BLUE, LOW);
+    digitalWrite(LED_RED, HIGH);
+    digitalWrite(LED_GREEN, LOW);
+    digitalWrite(LED_BLUE, HIGH);
     LED_ORANGE_B.off();
     LED_RED_B.off();
     LED_GREEN_B.on();
     LED_BLUE_B.off();
   }
   if (state == 2) {
-    digitalWrite(LED_RED, LOW);
-    digitalWrite(LED_GREEN, LOW);
-    digitalWrite(LED_BLUE, HIGH);
+    digitalWrite(LED_RED, HIGH);
+    digitalWrite(LED_GREEN, HIGH);
+    digitalWrite(LED_BLUE, LOW);
     LED_ORANGE_B.off();
     LED_RED_B.off();
     LED_GREEN_B.off();
     LED_BLUE_B.on();
   }
   if (state == 3) {
-    digitalWrite(LED_RED, HIGH);
-    digitalWrite(LED_GREEN, LOW);
-    digitalWrite(LED_BLUE, LOW);
+    digitalWrite(LED_RED, LOW);
+    digitalWrite(LED_GREEN, HIGH);
+    digitalWrite(LED_BLUE, HIGH);
     LED_RED_B.on();
     LED_GREEN_B.off();
     LED_BLUE_B.off();
@@ -393,30 +393,30 @@ void checkSettings()
 }
 
 void checkWiFi() {
-//  while (1) {
-//    if (WiFi.status() != WL_CONNECTED) {
-//     Serial.println("WiFi Disconnected.");
-//      WiFi.begin((char*)ssid, (char*)pass);
-//      Serial.print("disconnect state: ");
-//      Serial.println(state);
-//    }
-    if (WiFi.status() != WL_CONNECTED)
+  //  while (1) {
+  //    if (WiFi.status() != WL_CONNECTED) {
+  //     Serial.println("WiFi Disconnected.");
+  //      WiFi.begin((char*)ssid, (char*)pass);
+  //      Serial.print("disconnect state: ");
+  //      Serial.println(state);
+  //    }
+  if (WiFi.status() != WL_CONNECTED)
+  {
+    Serial.print("Attempting to connect to SSID: ");
+    //Serial.println(SECRET_SSID);
+    while (WiFi.status() != WL_CONNECTED)
     {
-      Serial.print("Attempting to connect to SSID: ");
-      //Serial.println(SECRET_SSID);
-      while (WiFi.status() != WL_CONNECTED)
-      {
-        WiFi.begin(ssid, pass); // Connect to WPA/WPA2 network. Change this line if using open or WEP network
-        Serial.print(".");
-        delay(1000);
-      }
-      Serial.println("\nConnected.");      
+      WiFi.begin(ssid, pass); // Connect to WPA/WPA2 network. Change this line if using open or WEP network
+      Serial.print(".");
+      delay(1000);
     }
-    Serial.print("loopwifi state: ");
-    Serial.println(state);
-//    vTaskDelay(5000 / portTICK_PERIOD_MS);
-//    delay(000);
-  
+    Serial.println("\nConnected.");
+  }
+  Serial.print("loopwifi state: ");
+  Serial.println(state);
+  //    vTaskDelay(5000 / portTICK_PERIOD_MS);
+  //    delay(000);
+
 }
 
 //void checkstate(void *p) {
@@ -477,7 +477,7 @@ void setup()
   checkSettings();
 
   // SET WiFi
-//  xTaskCreate(&checkWiFi, "checkWiFi", 3000, NULL, 10, NULL);
+  //  xTaskCreate(&checkWiFi, "checkWiFi", 3000, NULL, 10, NULL);
 
   checkWiFi();
   Blynk.begin(auth, ssid, pass);
@@ -485,14 +485,14 @@ void setup()
   WiFi.mode(WIFI_STA);
   //  xTaskCreate(&CheckConnection, "CheckConnection", 3000, NULL, 10, NULL);
   ThingSpeak.begin(client); // Initialize ThingSpeak
-  
+
 
   // SET LED
   pinMode(LED_RED, OUTPUT);
   pinMode(LED_GREEN, OUTPUT);
   pinMode(LED_BLUE, OUTPUT);
   pinMode(battery_adc, INPUT);
-//  state = 0;
+  //  state = 0;
   ledstatus();
   state = 1;
   readBattery();
@@ -501,9 +501,9 @@ void setup()
   Blynk.virtualWrite(V9, "clr");
 
   //run sendEvent method every second
-//  xTaskCreate(&checkstate, "checkstate", 3000, NULL, 11, NULL);
-//  timerAttachInterrupt(checkWiFi, &checkWiFi, true);
-//  timer.setInterval(1000L, CheckConnection);
+  //  xTaskCreate(&checkstate, "checkstate", 3000, NULL, 11, NULL);
+  //  timerAttachInterrupt(checkWiFi, &checkWiFi, true);
+  //  timer.setInterval(1000L, CheckConnection);
   timer.setInterval(1000L, sendEvent);
 }
 
@@ -514,7 +514,7 @@ void loop()
   Blynk.run();
   timer.run();
   Serial.print(" * start state: ");
-//  Serial.println(uxTaskGetNumberOfTasks);
+  //  Serial.println(uxTaskGetNumberOfTasks);
   // *** BME280 high height measurement ***
   if (state == 9)
   {
@@ -524,7 +524,7 @@ void loop()
     state = 1;
   }
   if (state == 1)
-  { 
+  {
     CheckConnection();
     Serial.print(" * state: ");
     Serial.println(state);
@@ -564,7 +564,7 @@ void loop()
     }
     else {
       VaPut[7] = height;
-//      ledstatus();
+      //      ledstatus();
       state = 3;
     }
   }
