@@ -2,7 +2,11 @@
   rtc not connected
   time in thingspeak
   Demo   : Silo measurement
+<<<<<<< HEAD
   VERSION: 0.3.5 (9/10/2019)
+=======
+  VERSION: 0.1 (2/8/2019)
+>>>>>>> refs/remotes/origin/master
 
   MCU    : ESP32(ESP-WROOM-32)
 
@@ -93,15 +97,15 @@ int state2 = 0;
 
 // *** Wifi ***
 WiFiClient client;
-char ssid[] = "";  // your network SSID (name)
-char pass[] = ""; // your network password
+char ssid[] = "Krittanat";  // your network SSID (name)
+char pass[] = "passwordrai"; // your network password
 int WifiSignal;
 int CurrentWiFiSignal;
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
 
 // *** Blynk ***
-char auth[] = "";
+char auth[] = "S4ZIndHj4QdQdeOU_qS01ACFQ6pXsFIr";
 #define BLYNK_PRINT Serial
 #define RESET_B_pin V1
 #define Widget_HEIGHT_BME V5
@@ -139,7 +143,7 @@ const int   daylightOffset_sec = 0;
 
 // *** ThingSpeak ***
 unsigned long myChannelNumber = 000000;         //update
-const char *myWriteAPIKey = ""; //update
+const char *myWriteAPIKey = "FE8FGBAVLZPIM51Z"; //update
 int keyIndex = 0;                               // your network key Index number (needed only for WEP)
 
 // *** Battery ***
