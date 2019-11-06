@@ -2,7 +2,7 @@
   rtc not connected
   time in thingspeak
   Demo   : Silo measurement
-  VERSION: 0.3 (8/10/2019)
+  VERSION: 0.1 (2/8/2019)
 
   MCU    : ESP32(ESP-WROOM-32)
 
@@ -36,7 +36,7 @@
 #include <BlynkSimpleEsp32.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
-#include <Adafruit_BMP280.h>
+//#include <Adafruit_BMP280.h>
 #include <MPU6050.h>
 #include <EEPROM.h>
 #include "time.h"
@@ -55,6 +55,8 @@ float avgAltitude;
 float sumTemp = 0;
 float sumPress = 0;
 float sumAlti = 0;
+float upAlti = 0;
+float lowAlti = 0;
 Adafruit_BME280 bme;
 TwoWire bmeTwoWire = TwoWire(0);
 
@@ -91,15 +93,15 @@ int state2 = 0;
 
 // *** Wifi ***
 WiFiClient client;
-char ssid[] = "";  // your network SSID (name)
-char pass[] = ""; // your network password
+char ssid[] = "Krittanat";  // your network SSID (name)
+char pass[] = "passwordrai"; // your network password
 int WifiSignal;
 int CurrentWiFiSignal;
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
 
 // *** Blynk ***
-char auth[] = "";
+char auth[] = "S4ZIndHj4QdQdeOU_qS01ACFQ6pXsFIr";
 #define BLYNK_PRINT Serial
 #define RESET_B_pin V1
 #define Widget_HEIGHT_BME V5
@@ -126,8 +128,8 @@ int rom_status;
 int a;
 int len;
 int saveValues(int z = 0);
-float VaPut[8] = {};
-String VaGet[702] = {};   // (EEPROM Max size // bytes for 1 dataset) * number of data in dataset = (4096//52)*9
+float VaPut[7] = {};
+String VaGet[680] = {};   // (EEPROM Max size // bytes for 1 dataset) * number of data in dataset = (4096//48)*8
 
 
 // *** Time ***
@@ -137,7 +139,7 @@ const int   daylightOffset_sec = 0;
 
 // *** ThingSpeak ***
 unsigned long myChannelNumber = 000000;         //update
-const char *myWriteAPIKey = ""; //update
+const char *myWriteAPIKey = "FE8FGBAVLZPIM51Z"; //update
 int keyIndex = 0;                               // your network key Index number (needed only for WEP)
 
 // *** Battery ***
@@ -291,12 +293,12 @@ int saveValues(int z)
 {
   addr = 0;
   while (!romReady(addr)) {
-    addr += 52; // 8 index * 4 bytes + 1 string * 20 bytes
+    addr += 48; // 7 index * 4 bytes + 1 string * 20 bytes
   }
   Serial.print("Rom is empty at address: ");
   Serial.println(addr);
 
-  // Add 8 elements to rom
+  // Add 7 elements to rom
   for (int i = 0; i < (sizeof(VaPut) / sizeof(VaPut[0])); i++)
   {
     //    String as = String(VaPut[i]);
@@ -337,7 +339,7 @@ void readValues()
   float read_data;
   while (i < addr) {
     //    Serial.println("Dataset number: " + String(i));
-    if (len % 9 == 8) {
+    if (len % 8 == 7) {
       VaGet[len] = read_String(i);
       Serial.println("Created at: " + VaGet[len]);
       i = i + VaGet[len].length() + 1;
@@ -439,8 +441,8 @@ void read_mpu()
   //    &mpuTask,                // Task handle
   //    0);                      // Core used
 
-  //  Serial.println(String(mpu1.getIntFreefallStatus()) + "MPU Status 1");
-  //  delay(100);
+  //    Serial.println(String(mpu1.getIntFreefallStatus()) + "MPU Status 1");
+  //    delay(100);
   //  while (!(mpu.getIntFreefallStatus() == 1)) {}
   //  while (1) {
   //    readmpu1();
@@ -479,37 +481,33 @@ void read_mpu()
   //  Serial.print(height1);
   //  Serial.println(" m");
   //  Serial.println();
+  Serial.println(String(mpu1.getIntFreefallStatus()) + " MPU Status 1");
+  Serial.println(String(mpu2.getIntFreefallStatus()) + " MPU Status 2");
+  delay(100);
   while (1) {
+    if (timer1[2] != 0 && timer2[2] != 0) {
+      return;
+    }
     float x = readmpu1();
     float y = readmpu2();
-
-    //  Serial.printf("x =\t%f\tf1 =\t%d\t y =\t%f\t f2 =\t%d\n", x, f1, y, f2);
-    if (mpu1.getIntFreefallStatus()) {
-      start_time1 = millis();
-      //    Serial.print("V Start timer1 =\t");
-      //    Serial.print(start_time1); Serial.print("\t");
-      //    Serial.println(count1_st);
-      Serial.print("MPU 1 Interrupt");
-      if (count1_st == 0) {
+    if (timer1[0] == 0) {
+      if (mpu1.getIntFreefallStatus()) {
+        start_time1 = millis();
+        //    Serial.print("V Start timer1 =\t");
+        //    Serial.print(start_time1); Serial.print("\t");
+        //    Serial.println(count1_st);
+        Serial.print("MPU 1 Interrupt");
+        //      if (count1_st == 0) {
         timer1[0] = start_time1;
+        //      }
+        //      count1_st++;
       }
-      count1_st++;
     }
-    if (mpu2.getIntFreefallStatus()) {
-      start_time2 = millis();
-      //    Serial.print("V Start timer2 =\t");
-      //    Serial.print(start_time2); Serial.print("\t");
-      //    Serial.println(count2_st);
-      Serial.print("MPU 2 Interrupt");
-      if (count2_st == 0) {
-        timer2[0] = start_time2;
-      }
-      count2_st++;
-    }
-    if (sum1 > 20) {
-      stop_time1 = millis();
-      //    Serial.println(count1_sp);
-      if (count1_sp == 0) {
+    if (timer1[1] == 0 && timer1[0] != 0) {
+      if (sum1 > 20) {
+        stop_time1 = millis();
+        //    Serial.println(count1_sp);
+        //      if (count1_sp == 0) {
         timer1[1] = stop_time1;
         capture_time1 = timer1[1] - timer1[0];
         timer1[2] = capture_time1;
@@ -523,13 +521,31 @@ void read_mpu()
         Serial.print(timer1[2]); Serial.print("\n");
         Serial.print("Height1 =\t");
         Serial.println(height1);
+        //      }
+        //      count1_sp++;
       }
-      count1_sp++;
     }
-    if (sum2 > 20) {
-      stop_time2 = millis();
-      //    Serial.println(count2_sp);
-      if (count2_sp == 0) {
+
+    //  Serial.printf("x =\t%f\tf1 =\t%d\t y =\t%f\t f2 =\t%d\n", x, f1, y, f2);
+    if (timer2[0] == 0) {
+      if (mpu2.getIntFreefallStatus()) {
+        start_time2 = millis();
+        //    Serial.print("V Start timer2 =\t");
+        //    Serial.print(start_time2); Serial.print("\t");
+        //    Serial.println(count2_st);
+        Serial.print("MPU 2 Interrupt");
+        //      if (count2_st == 0) {
+        timer2[0] = start_time2;
+        //      }
+        //      count2_st++;
+      }
+    }
+
+    if (timer2[1] == 0 && timer2[0] != 0) {
+      if (sum2 > 20) {
+        stop_time2 = millis();
+        //    Serial.println(count2_sp);
+        //      if (count2_sp == 0) {
         timer2[1] = stop_time2;
         capture_time2 = timer2[1] - timer2[0];
         timer2[2] = capture_time2;
@@ -543,12 +559,13 @@ void read_mpu()
         Serial.print(timer2[2]); Serial.print("\n");
         Serial.print("Height2 =\t");
         Serial.println(height2);
+        //      }
+        //      count2_sp++;
       }
-      count2_sp++;
     }
-    if (height1 != 0 && height2 != 0) {
-      return;
-    }
+    //    if (height1 != 0 && height2 != 0) {
+    //      return;
+    //    }
   }
   //  if ((height1 < 50 && height1 > 10) && (height2 > 10 && height2 < 50)) {
   //      Serial.print("Height1: ");
@@ -654,12 +671,12 @@ void getdata()
   }
 
   readValues();
-  Serial.println("\nTry Disconnected Wifi\n");
-  delay(10000);
+//  Serial.println("\nTry Disconnected Wifi\n");
+//  delay(10000);
 
   // Write to ThingSpeak. There are up to 8 fields in a channel, allowing you to store up to 8 different
   // pieces of information in a channel.
-  for (int i = 0; i < len; i += 9)
+  for (int i = 0; i < len; i += 8)
   {
     if (i > 0) {
       delay(20000);  // Wait Thingspeak to ready for sending values
@@ -669,20 +686,20 @@ void getdata()
     //    h = ThingSpeak.setField(1, VaGet[i]);     // Temp HIGH
     //    Serial.println("h Status: " + String(h));
     ThingSpeak.setField(1, VaGet[i]);     // Temp HIGH
-    ThingSpeak.setField(2, VaGet[i + 3]); // Temp LOW
-    ThingSpeak.setField(3, VaGet[i + 1]); // Pressure HIGH
-    ThingSpeak.setField(4, VaGet[i + 4]); // Pressure LOW
-    ThingSpeak.setField(5, VaGet[i + 2]); // Altitude HIGH
-    ThingSpeak.setField(6, VaGet[i + 5]); // Altitude LOW
+    ThingSpeak.setField(2, VaGet[i + 1]); // Temp LOW
+    ThingSpeak.setField(3, VaGet[i + 2]); // Pressure HIGH
+    ThingSpeak.setField(4, VaGet[i + 3]); // Pressure LOW
+    ThingSpeak.setField(5, VaGet[i + 4]); // MPU6050_1_HEIGHT
+    ThingSpeak.setField(6, VaGet[i + 5]); // MPU6050_2_HEIGHT
     ThingSpeak.setField(7, VaGet[i + 6]); // BME280_HEIGHT
-    ThingSpeak.setField(8, VaGet[i + 7]); // MPU6050_HEIGHT
+//    ThingSpeak.setField(8, VaGet[i + 7]); // MPU6050_HEIGHT
 
     terminal.print("HEIGHT_BME : ");
     terminal.print(String(VaGet[i + 6]));
     terminal.print("  HEIGHT_MPU : ");
     terminal.println(String(VaGet[i + 7]));
 
-    ThingSpeak.setCreatedAt(VaGet[i + 8]);
+    ThingSpeak.setCreatedAt(VaGet[i + 7]);
 
     // write to the ThingSpeak channel
     int x = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
@@ -698,7 +715,7 @@ void getdata()
       //        EEPROM.put(i, 0);
       //      }
       //      Serial.println("Clear ROM");
-      for (int j = i / 9 * 52; j < ((i / 9) + 1) * 52; j++)
+      for (int j = i / 8 * 48; j < ((i / 8) + 1) * 48; j++)
       {
         EEPROM.put(j, 0);
       }
@@ -724,7 +741,7 @@ void checkSettings1()
 {
   Serial.println();
   Serial.println(mpu1.testConnection() ? " * MPU6050_1_x68 connection successful" : " * MPU6050_1_x68 connection failed");
-  Serial.print(" * Motion Intฉerrupt:     ");
+  Serial.print(" * Motion Interrupt:     ");
   Serial.println(mpu1.getIntMotionEnabled() ? "Enabled" : "Disabled");
   Serial.print(" * Zero Motion Interrupt:     ");
   Serial.println(mpu1.getIntZeroMotionEnabled() ? "Enabled" : "Disabled");
@@ -907,11 +924,13 @@ void loop()
   //  CheckConnection();
   //  Blynk.run();
   //  timer.run();
-  Serial.print(" * start state: ");
+//  Serial.print(" * start state: ");
   //  Serial.println(uxTaskGetNumberOfTasks);
   // *** BME280 high height measurement ***
   if (state == 9)
   {
+    Serial.print(" * state: ");
+    Serial.println(state);
     ledstatus();
     CheckConnection();
     sendEvent();
@@ -926,16 +945,16 @@ void loop()
     Serial.println("*** Start measurement ***");
     read_bme();
     VaPut[0] = sumTemp / AVG_SIZE;
-    VaPut[1] = sumPress / AVG_SIZE;
-    VaPut[2] = sumAlti / AVG_SIZE;
+    VaPut[2] = sumPress / AVG_SIZE;
+    upAlti = sumAlti / AVG_SIZE;
     Serial.print("Average Temperature = ");
     Serial.print(VaPut[0]);
     Serial.println(" *C");
     Serial.print("Pressure = ");
-    Serial.print(VaPut[1]);
+    Serial.print(VaPut[2]);
     Serial.println(" Pa");
     Serial.print("Approx. Altitude = ");
-    Serial.print(VaPut[2]);
+    Serial.print(upAlti);
     Serial.println(" m");
     //    Serial.print("Humidity = ");
     //    Serial.print(bme.readHumidity());
@@ -945,6 +964,8 @@ void loop()
     Serial.println();
     ledstatus();
     state = 2;
+    Serial.print("Go to state: ");
+    Serial.println(state);
   }
 
   // *** MPU6050 height measurement ***
@@ -953,23 +974,28 @@ void loop()
     Serial.print("state: ");
     Serial.println(state);
     read_mpu();
-    count1_st = 0;
-    count1_sp = 0;
-    count2_st = 0;
-    count2_sp = 0;
+//    count1_st = 0;
+//    count1_sp = 0;
+//    count2_st = 0;
+//    count2_sp = 0;
     memset(timer1, 0, sizeof(timer1));
     memset(timer2, 0, sizeof(timer2));
-    height1 = 0;
-    height2 = 0;
-    if (!((height1 < 50) && (height1 > 10)))
+//    height1 = 0;
+//    height2 = 0;
+    if (!((height1 < 50 && height1 > 0.1) && (height2 > 0.1 && height2 < 50)))
     {
       state = 9;
+      Serial.print("Go to state: ");
+    Serial.println(state);
     }
     else
     {
-      VaPut[7] = height1;
+      VaPut[4] = height1;
+      VaPut[5] = height2;
       //      ledstatus();
       state = 3;
+      Serial.print("Go to state: ");
+    Serial.println(state);
     }
   }
 
@@ -983,18 +1009,17 @@ void loop()
     read_bme();
     //    float bme2 = VaPut[5];
     //    saveValues(addr);
-    VaPut[3] = sumTemp / AVG_SIZE;
-    VaPut[4] = sumPress / AVG_SIZE;
-    VaPut[5] = sumAlti / AVG_SIZE;
+    VaPut[1] = sumTemp / AVG_SIZE;
+    VaPut[3] = sumPress / AVG_SIZE;
+    lowAlti = sumAlti / AVG_SIZE;
     Serial.print("Average Temperature = ");
-    Serial.print(VaPut[3]);
+    Serial.print(VaPut[1]);
     Serial.println(" *C");
     Serial.print("Pressure = ");
-    //  Serial.print(bmeVaPut[1] / 100.0F);
-    Serial.print(VaPut[4]);
+    Serial.print(VaPut[3]);
     Serial.println(" Pa");
     Serial.print("Approx. Altitude = ");
-    Serial.print(VaPut[5]);
+    Serial.print(lowAlti);
     Serial.println(" m");
     //    Serial.print("Humidity = ");
     //    Serial.print(bme.readHumidity());
@@ -1003,14 +1028,16 @@ void loop()
     Serial.println("Save low ground bme succcess!");
     Serial.println();
     Serial.print("Height diff: ");
-    Serial.print(VaPut[2] - VaPut[5]);
+    Serial.print(upAlti - lowAlti);
     Serial.println(" m");
     Serial.println();
-    VaPut[6] = VaPut[2] - VaPut[5];
+    VaPut[6] = upAlti - lowAlti;
     ledstatus();
     saveValues();
     EEPROM.commit();
     state = 4;
+    Serial.print("Go to state: ");
+    Serial.println(state);
   }
 
   // *** GETDATE TO BLYNK AND ThingSpeak***
@@ -1023,5 +1050,7 @@ void loop()
     readBattery();
     delay(10000); // Wait 20 seconds to update the channel again
     state = 1;
+    Serial.print("Go to state: ");
+    Serial.println(state);
   }
 }
