@@ -2,7 +2,7 @@
   rtc not connected
   time in thingspeak
   Demo   : Silo measurement
-  VERSION: 0.3.5 (9/10/2019)
+  VERSION: 0.3.6 (9/10/2019)
 
   MCU    : ESP32(ESP-WROOM-32)
 
